@@ -4,10 +4,10 @@ TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
 
-VERILOG_SOURCES = $(PWD)/               # provide your design path
+VERILOG_SOURCES = $(PWD)/bcd_to_ex3_buggy.v # provide your design path
 
-TOPLEVEL :=           # design file
-MODULE   :=     # test file
+TOPLEVEL :=  bcd_ex3_nand # design file
+MODULE   :=  test_bcd_to_ex3   # test file
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
