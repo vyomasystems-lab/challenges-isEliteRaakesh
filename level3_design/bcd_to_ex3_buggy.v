@@ -7,7 +7,7 @@ not n2(bh,b);
 not n3(ch,c);
 not n4(dh,d);
 
-nand(x1,b,d);
+nand(x1,b,c);
 nand(x2,a,d);
 nand(x3,a,bh);
 nand(x4,b,c);
@@ -15,13 +15,13 @@ nand(x4,b,c);
 nand(w,x1,x2,x3,x4);
 
 nand(x5,b,ch,dh);
-nand(x6,bh,d);
+nand(x6,bh,c);
 nand(x7,bh,c);
 
 nand(x,x5,x6,x7);
 
 nand(x8,ch,dh);
-nand(x9,c,d);
+nand(x9,a,b);
 
 nand(y,x8,x9);
 
