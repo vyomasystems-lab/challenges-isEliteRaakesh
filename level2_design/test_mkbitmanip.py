@@ -15,9 +15,9 @@ from model_mkbitmanip import *
 @cocotb.coroutine
 def clock_gen(signal):
     while True:
-        signal.value <= 0
+        signal.value = 0
         yield Timer(1) 
-        signal.value <= 1
+        signal.value = 1
         yield Timer(1) 
 
 # Sample Test
@@ -28,35 +28,165 @@ def run_test(dut):
     cocotb.fork(clock_gen(dut.CLK))
 
     # reset
-    dut.RST_N.value <= 0
+    dut.RST_N.value = 0
     yield Timer(10) 
-    dut.RST_N.value <= 1
+    dut.RST_N.value = 1
 
     ######### CTB : Modify the test to expose the bug #############
     # input transaction
-    mav_putvalue_src1 = 0x5
-    mav_putvalue_src2 = 0x0
-    mav_putvalue_src3 = 0x0
-    mav_putvalue_instr = 0x101010B3
+    mav_putvalue_src1 = 0x000456f1
+    mav_putvalue_src2 = 0x0100ab80
+    mav_putvalue_src3 = 0xd0002317
 
-    # expected output from the model
-    expected_mav_putvalue = bitmanip(mav_putvalue_instr, mav_putvalue_src1, mav_putvalue_src2, mav_putvalue_src3)
+    rs1 = '000'
+    rs2 = '0000000'
+    rd = '00000'
 
-    # driving the input transaction
-    dut.mav_putvalue_src1.value = mav_putvalue_src1
-    dut.mav_putvalue_src2.value = mav_putvalue_src2
-    dut.mav_putvalue_src3.value = mav_putvalue_src3
-    dut.EN_mav_putvalue.value = 1
-    dut.mav_putvalue_instr.value = mav_putvalue_instr
-  
-    yield Timer(1) 
-
-    # obtaining the output
-    dut_output = dut.mav_putvalue.value
-
-    cocotb.log.info(f'DUT OUTPUT={hex(dut_output)}')
-    cocotb.log.info(f'EXPECTED OUTPUT={hex(expected_mav_putvalue)}')
+    opcode = '0110011'
+    func7 = ['0100000', '0100000', '0100000', '0010000', '0010000', '0110000', '0110000'
+, '0010000'
+, '0010000'
+, '0010000'
+, '0100100'
+, '0010100'
+, '0110100'
+, '0100100'
+, '0010100'
+, '0110100'
+]
+    func3 = ['111', '110', '100'
+, '001'
+, '101'
+, '001'
+, '101'
+, '010'
+, '100'
+, '110'
+, '001'
+, '001'
+, '001'
+, '101'
+, '101'
+, '101'
+]
+    ins_str = [func7[i] + rs2 + rs1 + func3[i] + rd + opcode for i in range(len(func7))]
     
-    # comparison
-    error_message = f'Value mismatch DUT = {hex(dut_output)} does not match MODEL = {hex(expected_mav_putvalue)}'
-    assert dut_output == expected_mav_putvalue, error_message
+    opcode = '0110011'
+    func7 = ['0000101'
+, '0000101'
+, '0000101'
+, '0000101'
+, '0000101'
+, '0000101'
+, '0000101'
+, '0100100'
+, '0000100'
+, '0000100'
+, '0100100'
+, '0000100'
+]
+    func3 = ['001', '011'
+, '010'
+, '100'
+, '101'
+, '110'
+, '111'
+, '110'
+, '110'
+, '100'
+, '100'
+, '111'
+]
+
+    ins_str += [func7[i] + rs2 + rs1 + func3[i] + rd + opcode for i in range(len(func7))]
+    
+    opcode = '0010011'
+    
+    func7 = ['0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+, '0110000'
+]
+
+    imm = ['00000'
+, '00001'
+, '00010'
+, '00100'
+, '00101'
+, '10000'
+, '10001'
+, '10010'
+, '11000'
+, '11001'
+, '11010'
+]
+
+    func3 = ['001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+, '001'
+]
+
+    ins_str += [func7[i] + imm[i] + '00000' + func3[i] + rd + opcode for i in range(len(func7))]
+    
+    opcode = '0110011' 
+    
+    ins_str += ['0000011'+rs2+rs1+'001'+rd+opcode, '0000011'+rs2+rs1+'101'+rd+opcode,
+    '0000010'+rs2+rs1+'001'+rd+opcode, '0000010'+rs2+rs1+'101'+rd+opcode]
+    
+    opcode = '0010011'
+
+    ins_str += ['000010'+'0'+rs2+rs1+'001'+rd+opcode, '000010'+'0'+rs2+rs1+'101'+rd+opcode, 
+    '00101'+'00'+rs2+rs1+'101'+rd+opcode, '01101'+'00'+rs2+rs1+'101'+rd+opcode,
+    '00000'+'1'+'0'+rs2+rs1+'101'+rd+opcode]
+    
+    opcode = '0110011'
+    ins_str += ['0100100'+rs2+rs1+'111'+rd+opcode]
+    
+    
+    
+   
+    
+    insts = [int(i, base=2) for i in ins_str]
+    #for mav_putvalue_instr in [0x101010B3]:
+    count = 0
+    total = 0
+    for mav_putvalue_instr in insts:
+        # expected output from the model
+        expected_mav_putvalue = bitmanip(mav_putvalue_instr, mav_putvalue_src1, mav_putvalue_src2, mav_putvalue_src3)
+
+        # driving the input transaction
+        dut.mav_putvalue_src1.value = mav_putvalue_src1
+        dut.mav_putvalue_src2.value = mav_putvalue_src2
+        dut.mav_putvalue_src3.value = mav_putvalue_src3
+        dut.EN_mav_putvalue.value = 1
+        dut.mav_putvalue_instr.value = mav_putvalue_instr
+    
+        yield Timer(1) 
+
+        # obtaining the output
+        dut_out = dut.mav_putvalue.value
+
+        cocotb.log.info(f'DUT OUTPUT={hex(dut_out)}')
+        cocotb.log.info(f'MODEL EXPECTED OUTPUT={hex(expected_mav_putvalue)}')
+        cocotb.log.info(f'INSTRUCTION={hex(mav_putvalue_instr)}')
+        if dut_out != expected_mav_putvalue:
+        	count += 1
+        total += 1
+       
+    assert not count, f'Number of Mismatch Errors : {count} out of {total}'
+        
